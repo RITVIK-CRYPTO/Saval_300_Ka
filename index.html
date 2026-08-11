@@ -115,7 +115,10 @@
       <div id="gate-error" class="already-attempted" style="display:none;">
         <div class="attempted-icon">❌</div>
         <h3>Quiz Not Found</h3>
-        <p style="color: var(--text-secondary); margin-top: 8px;">The quiz link may be invalid or expired. Please ask the creator for a new link.</p>
+        <p id="gate-error-text" style="color: var(--text-secondary); margin-top: 8px;">The quiz link may be invalid or expired. Please ask the creator for a new link.</p>
+        <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center;">
+          <button id="btn-retry-load" class="btn-secondary btn-small">🔄 Retry Loading</button>
+        </div>
       </div>
 
       <!-- Gate Content State -->

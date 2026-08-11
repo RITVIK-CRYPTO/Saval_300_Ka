@@ -490,12 +490,39 @@ class QuizApp {
       if (!isMuted) this.showToast('🔊 Sound ON');
       else this.showToast('🔇 Sound OFF');
     });
+
+    // Retry load button
+    const btnRetry = document.getElementById('btn-retry-load');
+    if (btnRetry) {
+      btnRetry.addEventListener('click', () => this.checkURLForQuiz());
+    }
   }
 
   // ── Check URL for Quiz Data ──
   async checkURLForQuiz() {
+    const searchParams = new URLSearchParams(window.location.search);
     const hash = window.location.hash.substring(1);
-    if (hash && hash.length > 2) {
+
+    // Extract potential quiz ID or data from search query OR hash
+    const queryId = searchParams.get('id');
+    const queryData = searchParams.get('data');
+
+    let blobId = queryId || null;
+    let rawCompressed = queryData || null;
+
+    if (!blobId && !rawCompressed && hash && hash.length > 2) {
+      if (hash.startsWith('id=')) {
+        blobId = hash.substring(3);
+      } else if (hash.startsWith('data=')) {
+        rawCompressed = hash.substring(5);
+      } else if (hash.match(/^[0-9a-fA-F-]{20,}/)) {
+        blobId = hash;
+      } else {
+        rawCompressed = hash;
+      }
+    }
+
+    if (blobId || rawCompressed) {
       this.isParticipantMode = true;
       const btnCreate = document.getElementById('btn-create-quiz');
       if (btnCreate) btnCreate.style.display = 'none';
@@ -506,14 +533,7 @@ class QuizApp {
 
       let quizPayload = null;
 
-      // Case 1: Cloud storage blob ID (e.g. #id=019ff0... or #019ff0...)
-      let blobId = null;
-      if (hash.startsWith('id=')) {
-        blobId = hash.substring(3);
-      } else if (hash.match(/^[0-9a-fA-F-]{20,}/)) {
-        blobId = hash;
-      }
-
+      // Try 1: Fetch from Cloud Storage if blob ID exists
       if (blobId) {
         try {
           const res = await fetch(`https://jsonblob.com/api/jsonBlob/${blobId}`);
@@ -521,22 +541,18 @@ class QuizApp {
             quizPayload = await res.json();
           }
         } catch (e) {
-          console.error('Failed to fetch quiz from cloud storage:', e);
+          console.warn('Failed to fetch quiz from cloud storage:', e);
         }
       }
 
-      // Case 2: Compressed URL hash (e.g. #data=... or compressed string)
-      if (!quizPayload) {
-        try {
-          let rawData = hash;
-          if (hash.startsWith('data=')) rawData = hash.substring(5);
-          const json = LZString.decompressFromEncodedURIComponent(rawData);
-          if (json) {
-            quizPayload = JSON.parse(json);
-          }
-        } catch (e) {
-          console.error('Failed to parse compressed quiz:', e);
-        }
+      // Try 2: Decompress LZString payload
+      if (!quizPayload && rawCompressed) {
+        quizPayload = this.decompressPayload(rawCompressed);
+      }
+
+      // Try 3: If blobId failed, check if blobId was actually a compressed string
+      if (!quizPayload && blobId) {
+        quizPayload = this.decompressPayload(blobId);
       }
 
       // If valid quiz payload retrieved
@@ -547,13 +563,52 @@ class QuizApp {
         return;
       }
 
-      // If quiz failed to load, show Error screen (never fall back to Home!)
+      // If quiz failed to load, show Error screen
       this.showGateError();
       return;
     }
 
-    // No hash present — show host/creator Home screen
+    // No search query or hash present — show host/creator Home screen
     this.showView('view-home');
+  }
+
+  decompressPayload(str) {
+    if (!str) return null;
+    let json = null;
+
+    // Attempt 1: Direct decompressFromEncodedURIComponent
+    try {
+      json = LZString.decompressFromEncodedURIComponent(str);
+    } catch (e) {}
+
+    // Attempt 2: Decode URI component first
+    if (!json) {
+      try {
+        json = LZString.decompressFromEncodedURIComponent(decodeURIComponent(str));
+      } catch (e) {}
+    }
+
+    // Attempt 3: Decompress from Base64
+    if (!json) {
+      try {
+        json = LZString.decompressFromBase64(str);
+      } catch (e) {}
+    }
+
+    // Attempt 4: Plain LZString decompress
+    if (!json) {
+      try {
+        json = LZString.decompress(str);
+      } catch (e) {}
+    }
+
+    if (json) {
+      try {
+        return JSON.parse(json);
+      } catch (e) {}
+    }
+
+    return null;
   }
 
   // ── Quiz Creator ──

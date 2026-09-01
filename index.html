@@ -4,7 +4,312 @@
   <meta charset="UTF-8"><!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8"><!DOCTYPE html>
+<html lang="en">
+<head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C&W Quiz Arena | Cushman & Wakefield</title>
+  <meta name="description" content="Interactive KBC-style quiz platform by Cushman & Wakefield. Create, share, and compete in weekly knowledge challenges.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Particle Background -->
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- Stage Lights Overlay -->
+  <div class="stage-lights" id="stage-lights">
+    <div class="light-beam light-beam-1"></div>
+    <div class="light-beam light-beam-2"></div>
+    <div class="light-beam light-beam-3"></div>
+    <div class="light-beam light-beam-4"></div>
+  </div>
+
+  <!-- ═══════════ HOME VIEW ═══════════ -->
+  <div id="view-home" class="view active">
+    <div class="home-container">
+      <div class="brand-header">
+        <div class="cw-logo">
+          <div class="cw-icon"></div>
+          <span>CUSHMAN &amp; WAKEFIELD</span>
+        </div>
+      </div>
+      <div class="hero-section">
+        <div class="kbc-emblem">
+          <div class="emblem-ring emblem-ring-outer"></div>
+          <div class="emblem-ring emblem-ring-inner"></div>
+          <div class="emblem-center">
+            <span class="emblem-icon">💎</span>
+          </div>
+        </div>
+        <h1 class="hero-title">
+          <span class="title-line">QUIZ</span>
+          <span class="title-line gold">ARENA</span>
+        </h1>
+        <p class="hero-subtitle">Kaun Banega Champion? Test Your Knowledge.</p>
+        <div class="hero-tagline">Weekly Knowledge Challenge • Cushman & Wakefield</div>
+        <div class="home-actions">
+          <button id="btn-create-quiz" class="btn-primary btn-glow">
+            <span>🎯</span> Create New Quiz
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ QUIZ CREATOR VIEW ═══════════ -->
+  <div id="view-creator" class="view">
+    <div class="creator-container">
+      <div class="creator-header">
+        <h1>Create Your <span class="gold-text">Quiz</span></h1>
+        <p>Build questions, add images, and share with your team</p>
+      </div>
+      <div class="creator-form" id="creator-form">
+        <!-- Quiz Title -->
+        <div class="form-card">
+          <div class="form-group">
+            <label for="quiz-title">Quiz Title</label>
+            <input type="text" id="quiz-title" placeholder="e.g., Weekly Knowledge Challenge — Week 32">
+          </div>
+          <div class="form-group">
+            <label for="quiz-timer">Time per Question (seconds)</label>
+            <input type="number" id="quiz-timer" min="10" max="300" value="60" placeholder="60">
+          </div>
+        </div>
+
+        <!-- Questions Container -->
+        <div id="questions-container"></div>
+
+        <!-- Add Question Button -->
+        <button id="btn-add-question" class="add-question-btn">
+          ＋ Add Question
+        </button>
+
+        <!-- Creator Actions -->
+        <div class="creator-actions">
+          <button id="btn-back-home" class="btn-secondary">← Back</button>
+          <button id="btn-generate-link" class="btn-primary">
+            <span>🔗</span> Generate Shareable Link
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ NAME GATE VIEW ═══════════ -->
+  <div id="view-gate" class="view">
+    <div class="gate-container">
+      <div class="brand-header">
+        <div class="cw-logo">
+          <div class="cw-icon"></div>
+          <span>CUSHMAN &amp; WAKEFIELD</span>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="gate-loading" class="already-attempted" style="display:none;">
+        <div class="attempted-icon">⏳</div>
+        <h3>Loading Quiz...</h3>
+        <p style="color: var(--text-secondary); margin-top: 8px;">Preparing your KBC challenge...</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="gate-error" class="already-attempted" style="display:none;">
+        <div class="attempted-icon">❌</div>
+        <h3>Quiz Not Found</h3>
+        <p style="color: var(--text-secondary); margin-top: 8px;">The quiz link may be invalid or expired. Please ask the creator for a new link.</p>
+      </div>
+
+      <!-- Gate Content State -->
+      <div id="gate-content">
+        <div class="gate-kbc-badge">
+          <div class="kbc-badge-ring"></div>
+          <span class="gate-icon">🏆</span>
+        </div>
+        <h1>Welcome to</h1>
+        <div class="quiz-title-display" id="gate-quiz-title"></div>
+        <div class="quiz-meta" id="gate-quiz-meta"></div>
+        <div class="gate-rules">
+          <div class="rule-item">⏱️ Timed questions</div>
+          <div class="rule-item">🔒 One attempt only</div>
+          <div class="rule-item">🏆 Score at the end</div>
+        </div>
+        <div class="gate-form">
+          <input type="text" id="participant-name" placeholder="Enter your full name to begin..." autocomplete="name">
+          <button id="btn-start-quiz" class="btn-primary btn-glow">
+            <span>🚀</span> Start Quiz
+          </button>
+        </div>
+        <div id="already-attempted-msg" class="already-attempted" style="display:none;">
+          <div class="attempted-icon">⚠️</div>
+          <h3>Already Attempted</h3>
+          <p>You have already completed this quiz.</p>
+          <div class="prev-score" id="prev-score-display"></div>
+          <p class="prev-score-label">Your previous score</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ QUIZ PLAYER VIEW ═══════════ -->
+  <div id="view-player" class="view">
+    <div class="player-container">
+      <div class="player-main">
+        <!-- Top Bar (HUD) -->
+        <div class="player-top-bar">
+          <div class="player-info">
+            <div class="player-avatar" id="player-avatar"></div>
+            <span class="player-name" id="player-name-display"></span>
+          </div>
+          <div class="question-counter">
+            <div class="q-badge">QUESTION</div>
+            <span class="current-q" id="current-q-num">1</span>
+            <span id="total-q-num">/ 10</span>
+          </div>
+        </div>
+
+        <!-- Timer Section -->
+        <div class="timer-section">
+          <div class="timer-circle" id="timer-circle">
+            <svg class="timer-svg" viewBox="0 0 100 100">
+              <circle class="timer-track" cx="50" cy="50" r="45"/>
+              <circle class="timer-progress" id="timer-progress" cx="50" cy="50" r="45"/>
+            </svg>
+            <div class="timer-display" id="timer-display">60</div>
+          </div>
+          <div class="timer-bar-wrapper">
+            <div class="timer-bar" id="timer-bar"></div>
+          </div>
+        </div>
+
+        <!-- Question Card -->
+        <div class="question-card" id="question-card">
+          <div class="question-prize-tag" id="question-prize-tag"></div>
+          <img class="question-image" id="question-image" style="display:none;" alt="Question image">
+          <div class="question-text" id="question-text"></div>
+        </div>
+
+        <!-- Options (for objective) -->
+        <div class="options-container" id="options-container"></div>
+
+        <!-- Subjective Input (for subjective) -->
+        <div class="subjective-input-wrapper" id="subjective-wrapper" style="display:none;">
+          <textarea class="subjective-input" id="subjective-answer" placeholder="Type your answer here..." rows="3"></textarea>
+        </div>
+
+        <!-- Player Actions -->
+        <div class="player-actions">
+          <button id="btn-lock-answer" class="btn-lock" disabled>
+            <span class="lock-icon">🔒</span>
+            <span class="lock-text">Lock It</span>
+          </button>
+          <button id="btn-next-question" class="btn-lock btn-next" style="display:none;">Next →</button>
+        </div>
+      </div>
+
+      <!-- Money Ladder -->
+      <div class="money-ladder" id="money-ladder">
+        <div class="ladder-header">
+          <span class="ladder-diamond">💎</span>
+          <h4>Prize Ladder</h4>
+        </div>
+        <div id="ladder-items"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ RESULTS VIEW ═══════════ -->
+  <div id="view-results" class="view">
+    <div class="results-container">
+      <div class="results-trophy-area">
+        <div class="trophy-glow"></div>
+        <div class="results-trophy" id="results-trophy">🏆</div>
+      </div>
+      <h1 class="results-title">Quiz Complete!</h1>
+      <div class="results-player-name" id="results-player-name"></div>
+
+      <div class="score-card">
+        <div class="score-ring-wrapper">
+          <svg class="score-ring-svg" viewBox="0 0 120 120">
+            <circle class="score-ring-track" cx="60" cy="60" r="52"/>
+            <circle class="score-ring-progress" id="score-ring-progress" cx="60" cy="60" r="52"/>
+          </svg>
+          <div class="score-ring-content">
+            <div class="score-big" id="score-big">0</div>
+            <div class="score-label" id="score-out-of">out of 100</div>
+          </div>
+        </div>
+        <div class="score-percentage" id="score-percentage">0%</div>
+        <div class="score-breakdown">
+          <div class="breakdown-item">
+            <div class="breakdown-value correct-val" id="breakdown-correct">0</div>
+            <div class="breakdown-label">Correct</div>
+          </div>
+          <div class="breakdown-item">
+            <div class="breakdown-value wrong-val" id="breakdown-wrong">0</div>
+            <div class="breakdown-label">Wrong</div>
+          </div>
+          <div class="breakdown-item">
+            <div class="breakdown-value total-val" id="breakdown-total">0</div>
+            <div class="breakdown-label">Questions</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Breakdown -->
+      <div class="results-detail" id="results-detail">
+        <div class="results-detail-header">📋 Question-wise Breakdown</div>
+      </div>
+
+      <button id="btn-results-home" class="btn-secondary" style="margin-top: 16px;">← Back to Home</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ SHARE MODAL ═══════════ -->
+  <div class="modal-overlay" id="share-modal">
+    <div class="modal-content">
+      <button class="modal-close" id="modal-close">✕</button>
+      <div class="modal-icon">🔗</div>
+      <h2>Share Your Quiz</h2>
+      <p class="modal-subtitle">Send this link to your team to start the challenge</p>
+      <div class="share-link-box">
+        <input type="text" id="share-link-input" readonly>
+        <button class="btn-copy" id="btn-copy-link">📋 Copy</button>
+      </div>
+      <div class="share-buttons">
+        <button class="share-btn whatsapp" id="btn-share-whatsapp">
+          <span class="share-icon">💬</span>
+          <span>WhatsApp</span>
+        </button>
+        <button class="share-btn email" id="btn-share-email">
+          <span class="share-icon">✉️</span>
+          <span>Email</span>
+        </button>
+        <button class="share-btn teams" id="btn-share-teams">
+          <span class="share-icon">👥</span>
+          <span>Teams</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Sound Toggle -->
+  <button class="sound-toggle" id="sound-toggle" title="Toggle Sound">🔊</button>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>C&W Quiz Arena | Cushman & Wakefield</title>
   <meta name="description" content="Interactive KBC-style quiz platform by Cushman & Wakefield. Create, share, and compete in weekly knowledge challenges.">
